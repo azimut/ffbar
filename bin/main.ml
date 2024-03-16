@@ -8,20 +8,6 @@ let parse_timestamp t =
     (fun hour minute second _ ->
       hour * 60 * 60 + minute * 60 + second)
 
-let line2command line =
-  match line with
-  | line when String.starts_with ~prefix:"out_time=" line ->
-     let start = String.length "out_time=" in
-     Timestamp (
-         parse_timestamp @@
-           String.(sub line start ((length line) - start)))
-  | _ -> Nop
-
-let read_command () =
-    match In_channel.input_line stdin with
-    | None        -> Eof;
-    | Some (line) -> line2command line
-
 let rec read_duration () =
   match In_channel.input_line stdin with
   | None ->
@@ -34,14 +20,33 @@ let rec read_duration () =
   | Some _ ->
      read_duration ()
 
-let progress_bar duration timestamp =
-  Tty.Escape_seq.cursor_horizontal_seq 1 ();
-  Tty.Escape_seq.erase_line_seq 1 ();
-  Printf.printf "!!!!!!!!!!! %d" (duration - timestamp)
+let line2command line =
+  match line with
+  | line when String.starts_with ~prefix:"out_time=" line ->
+     let start = String.length "out_time=" in
+     Timestamp (
+         parse_timestamp @@
+           String.(sub line start ((length line) - start)))
+  | _ -> Nop
+
+let bar perc =
+  Printf.sprintf "%3d|%s%s|??:??:??" perc
+    (List.init perc (fun _ -> "\u{2588}") |> List.fold_left String.cat "")
+    (String.make (100-perc) ' ')
+
+let progress_bar _duration timestamp =
+  Tty.Escape_seq.cursor_horizontal_seq 0 ();
+  Tty.Escape_seq.erase_line_seq 200 ();
+  Printf.printf "%s" @@ bar (timestamp * 10)
+
+let read_command () =
+    match In_channel.input_line stdin with
+    | None        -> Eof;
+    | Some (line) -> line2command line
 
 let rec read_commands duration =
   match read_command () with
-  | Eof ->  ()
+  | Eof -> ()
   | Nop -> read_commands duration
   | Timestamp timestamp ->
      progress_bar duration timestamp;
