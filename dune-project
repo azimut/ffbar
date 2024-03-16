@@ -4,23 +4,19 @@
 
 (generate_opam_files true)
 
-(source
- (github username/reponame))
-
-(authors "Author Name")
-
-(maintainers "Maintainer Name")
-
+(source (github azimut/ffbar))
+(authors "azimut")
+(maintainers "azimut")
 (license LICENSE)
 
 (documentation https://url/to/documentation)
 
 (package
  (name ffbar)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune tty)
+ (synopsis "A progress bar for ffmpeg")
+ (description "(Yet another) ffmpeg wrapper that displays progress on a friendly way.")
+ (depends ocaml dune (tty (>= "0.0.2")))
  (tags
-  (topics "to describe" your project)))
+  (terminal ffmpeg)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
