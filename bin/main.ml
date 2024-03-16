@@ -31,8 +31,7 @@ let bar perc start_time =
     (duplicate (100 - perc) " ")
     tt.tm_hour tt.tm_min tt.tm_sec
 
-let progress_bar duration timestamp start_time =
-  let percentage = Int.of_float (100.0 *. timestamp /. duration) in
+let progress_bar percentage start_time =
   Tty.Escape_seq.cursor_horizontal_seq 0 () ;
   Tty.Escape_seq.erase_line_seq 200 () ;
   print_string @@ bar percentage start_time
@@ -47,7 +46,8 @@ let rec read_commands duration start_time =
   | Eof -> print_newline ()
   | Nop -> read_commands duration start_time
   | Timestamp timestamp ->
-      progress_bar duration timestamp start_time ;
+      let percentage = Int.of_float (100.0 *. timestamp /. duration) in
+      progress_bar percentage start_time ;
       read_commands duration start_time
 
 let () =
