@@ -1,7 +1,7 @@
 type command = Eof | Nop | Timestamp of float
 
 let parse_timestamp t =
-  Scanf.sscanf t "%d:%d:%d.%d" (fun hour minute second _ ->
+  Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
       Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
 
 let rec read_duration chan =
@@ -12,15 +12,15 @@ let rec read_duration chan =
   | Some line when String.starts_with ~prefix:"  Duration:" line ->
       Ok
         ( parse_timestamp
-        @@ String.(sub line (length "  Duration: ") (length "00:00:00.0")) )
+        @@ String.(sub line (length "  Duration: ") (length "00:00:00")) )
   | Some _ -> read_duration chan
 
 let line2command line =
   match line with
   | line when String.starts_with ~prefix:"out_time=" line ->
-      let start = String.length "out_time=" in
       Timestamp
-        (parse_timestamp @@ String.(sub line start (length line - start)))
+        ( parse_timestamp
+        @@ String.(sub line (length "out_time=") (length "00:00:00")) )
   | _ -> Nop
 
 let bar perc start_time =
