@@ -57,9 +57,21 @@ let read_output chan =
       let start_time = Unix.time () in
       read_commands chan duration start_time
 
+let print_usage () =
+  print_endline "Show a progress bar to your run of ffmpeg." ;
+  print_newline () ;
+  print_endline "Examples:" ;
+  print_endline "$ ffbar -i input.mp4 out.mp4" ;
+  print_endline
+    "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
+
 let () =
   match Sys.argv with
-  | [||] | [|_|] -> read_output stdin
+  | [||] | [|_|] ->
+      if Unix.isatty (Unix.descr_of_in_channel stdin) then
+        print_usage ()
+      else
+        read_output stdin
   | args ->
       args.(0) <-
         "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -" ;
