@@ -29,10 +29,11 @@ let bar perc =
     (duplicate perc "\u{2588}")
     (duplicate (100 - perc) " ")
 
-let progress_bar _duration timestamp =
+let progress_bar duration timestamp =
+  let percentage a b = Int.(of_float (100.0 *. (to_float b /. to_float a))) in
   Tty.Escape_seq.cursor_horizontal_seq 0 () ;
   Tty.Escape_seq.erase_line_seq 200 () ;
-  print_string @@ bar (timestamp * 10)
+  print_string @@ bar @@ percentage duration timestamp
 
 let read_command () =
   match In_channel.input_line stdin with
