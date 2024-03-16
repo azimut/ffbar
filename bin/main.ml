@@ -4,16 +4,16 @@ let parse_timestamp t =
   Scanf.sscanf t "%d:%d:%d.%d" (fun hour minute second _ ->
       Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
 
-let rec read_duration () =
-  match In_channel.input_line stdin with
+let rec read_duration chan =
+  match In_channel.input_line chan with
   | None -> Error "reached EOF before finding a Duration"
   | Some line when String.starts_with ~prefix:"frame=1" line ->
-      Error "reached progess updates before finding Duration"
+      Error "reached progress updates before finding Duration"
   | Some line when String.starts_with ~prefix:"  Duration:" line ->
       Ok
         ( parse_timestamp
         @@ String.(sub line (length "  Duration: ") (length "00:00:00.0")) )
-  | Some _ -> read_duration ()
+  | Some _ -> read_duration chan
 
 let line2command line =
   match line with
@@ -36,23 +36,31 @@ let progress_bar percentage start_time =
   Tty.Escape_seq.erase_line_seq 200 () ;
   print_string @@ bar percentage start_time
 
-let read_command () =
-  match In_channel.input_line stdin with
+let read_command chan =
+  match In_channel.input_line chan with
   | None -> Eof
   | Some line -> line2command line
 
-let rec read_commands duration start_time =
-  match read_command () with
+let rec read_commands chan duration start_time =
+  match read_command chan with
   | Eof -> print_newline ()
-  | Nop -> read_commands duration start_time
+  | Nop -> read_commands chan duration start_time
   | Timestamp timestamp ->
       let percentage = Int.of_float (100.0 *. timestamp /. duration) in
       progress_bar percentage start_time ;
-      read_commands duration start_time
+      read_commands chan duration start_time
 
-let () =
-  match read_duration () with
+let read_output chan =
+  match read_duration chan with
   | Error err -> failwith err
   | Ok duration ->
       let start_time = Unix.time () in
-      read_commands duration start_time
+      read_commands chan duration start_time
+
+let () =
+  match Sys.argv with
+  | [||] | [|_|] -> read_output stdin
+  | args ->
+      args.(0) <- "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner" ;
+      read_output @@ Unix.open_process_in
+      @@ String.concat " " (Array.to_list args)
