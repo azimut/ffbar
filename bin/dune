@@ -1,4 +1,4 @@
 (executable
  (public_name ffbar)
  (name main)
- (libraries ffbar))
+ (libraries ffbar tty))

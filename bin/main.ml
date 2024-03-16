@@ -35,7 +35,9 @@ let rec read_duration () =
      read_duration ()
 
 let progress_bar duration timestamp =
-  print_endline @@ string_of_int @@ duration - timestamp
+  Tty.Escape_seq.cursor_horizontal_seq 1 ();
+  Tty.Escape_seq.erase_line_seq 1 ();
+  Printf.printf "!!!!!!!!!!! %d" (duration - timestamp)
 
 let rec read_commands duration =
   match read_command () with
