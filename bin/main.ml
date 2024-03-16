@@ -68,7 +68,7 @@ let print_usage () =
 let () =
   match Sys.argv with
   | [||] | [|_|] ->
-      if Unix.isatty (Unix.descr_of_in_channel stdin) then
+      if Unix.(isatty stdin) then
         print_usage ()
       else
         read_output stdin
