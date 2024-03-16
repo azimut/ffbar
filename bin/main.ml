@@ -44,7 +44,7 @@ let read_command () =
 
 let rec read_commands duration start_time =
   match read_command () with
-  | Eof -> ()
+  | Eof -> print_newline ()
   | Nop -> read_commands duration start_time
   | Timestamp timestamp ->
       progress_bar duration timestamp start_time ;
