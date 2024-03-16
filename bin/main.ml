@@ -24,7 +24,7 @@ let line2command line =
   | _ -> Nop
 
 let bar perc start_time =
-  let duplicate n s = String.concat "" @@ List.init n (fun _ -> s) in
+  let duplicate n s = String.concat "" @@ List.init n (Fun.const s) in
   let tt = Unix.gmtime (Unix.time () -. start_time) in
   Printf.sprintf "%3d|%s%s|%02d:%02d:%02d" perc
     (duplicate perc "\u{2588}")
