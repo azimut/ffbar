@@ -61,6 +61,7 @@ let () =
   match Sys.argv with
   | [||] | [|_|] -> read_output stdin
   | args ->
-      args.(0) <- "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner" ;
+      args.(0) <-
+        "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -" ;
       read_output @@ Unix.open_process_in
       @@ String.concat " " (Array.to_list args)

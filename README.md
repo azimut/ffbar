@@ -4,6 +4,12 @@
 
 ## Usage
 
-```
-$ ffmpeg -nostdin -stats -progress - ... 2>&1 | ffbar
-```
+- Piping stderr and stdin
+  ```
+  $ ffmpeg -nostdin -stats -progress - ... 2>&1 | ffbar
+  ```
+
+- As a wrapper
+  ```
+  $ ffbar ...
+  ```
