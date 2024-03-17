@@ -1,7 +1,7 @@
 (executable
  (public_name ffbar)
  (name main)
- (libraries ffbar tty))
+ (libraries ffbar progress))
 
 (env
  (dev

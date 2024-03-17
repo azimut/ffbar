@@ -23,39 +23,34 @@ let line2command line =
         @@ String.(sub line (length "out_time=") (length "00:00:00")) )
   | _ -> Nop
 
-let bar perc start_time =
-  let duplicate n s = String.concat "" @@ List.init n (Fun.const s) in
-  let tt = Unix.gmtime (Unix.time () -. start_time) in
-  Printf.sprintf "%3d|%s%s|%02d:%02d:%02d" perc
-    (duplicate perc "\u{2588}")
-    (duplicate (100 - perc) " ")
-    tt.tm_hour tt.tm_min tt.tm_sec
-
-let progress_bar percentage start_time =
-  Tty.Escape_seq.cursor_horizontal_seq 0 () ;
-  Tty.Escape_seq.erase_line_seq 200 () ;
-  print_string @@ bar percentage start_time
-
 let read_command chan =
   match In_channel.input_line chan with
   | None -> Eof
   | Some line -> line2command line
 
-let rec read_commands chan duration start_time =
-  match read_command chan with
-  | Eof -> print_newline ()
-  | Nop -> read_commands chan duration start_time
-  | Timestamp timestamp ->
-      let percentage = Int.of_float (100.0 *. timestamp /. duration) in
-      progress_bar percentage start_time ;
-      read_commands chan duration start_time
+let read_commands chan duration =
+  let total = Float.to_int duration in
+  let bar =
+    let open Progress.Line in
+    list [elapsed (); bar ~style:`UTF8 total; percentage_of total]
+  in
+  let prev = ref 0.0 in
+  let quit = ref false in
+  Progress.with_reporter bar (fun f ->
+      while not !quit do
+        match read_command chan with
+        | Eof -> quit := true
+        | Nop -> ()
+        | Timestamp timestamp ->
+            f (Float.to_int (timestamp -. !prev)) ;
+            prev := timestamp
+      done ) ;
+  print_newline ()
 
 let read_output chan =
   match read_duration chan with
   | Error err -> failwith err
-  | Ok duration ->
-      let start_time = Unix.time () in
-      read_commands chan duration start_time
+  | Ok duration -> read_commands chan duration
 
 let print_usage () =
   print_endline "Show a progress bar to your run of ffmpeg." ;

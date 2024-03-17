@@ -15,7 +15,7 @@
  (name ffbar)
  (synopsis "A progress bar for ffmpeg")
  (description "(Yet another) ffmpeg wrapper that displays progress on a friendly way.")
- (depends ocaml dune (tty (>= "0.0.2")))
+ (depends ocaml dune progress)
  (tags
   (terminal ffmpeg)))
 

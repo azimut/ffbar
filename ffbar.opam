@@ -13,7 +13,7 @@ bug-reports: "https://github.com/azimut/ffbar/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.14"}
-  "tty" {>= "0.0.2"}
+  "progress"
   "odoc" {with-doc}
 ]
 build: [
