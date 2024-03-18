@@ -4,12 +4,21 @@
 
 ## Usage
 
-- Piping stderr and stdin
-  ```
-  $ ffmpeg -nostdin -stats -progress - ... 2>&1 | ffbar
-  ```
-
 - As a wrapper
   ```
-  $ ffbar ...
+  $ ffbar -i in.mp4 out.mp4
+  ```
+
+- Piping both `stdout` and `stderr`
+  ```
+  $ ffmpeg -nostdin -stats -progress - -i in.mp4 out.mp4 2>&1 | ffbar
+  ```
+
+## Installation
+
+- Download one of the available static compiled binaries from the [releases](https://github.com/azimut/ffbar/releases/) page.
+- Or build it yourself (needs a working opam/dune setup).
+  ```
+  $ make deps
+  $ make install
   ```
