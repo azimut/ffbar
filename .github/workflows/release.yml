@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: make image
-      - run: make static
+      - run: make docker
       - run: cp _build_static/default/bin/main.exe ffbar
       - uses: marvinpinto/action-automatic-releases@latest
         with:

@@ -1,3 +1,4 @@
+*.mp4
 _build_static/
 _build_release/
 

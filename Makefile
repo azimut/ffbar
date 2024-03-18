@@ -6,9 +6,8 @@ static:
 	opam exec -- dune build --profile static --build-dir _build_static
 	strip _build_static/default/bin/main.exe
 
-image:; docker build --tag ffbar:latest .
-docker:
-	docker run --rm --volume=$(shell pwd):/build ffbar make static
+image:;  docker build --tag ffbar:latest .
+docker:; docker run --rm --volume=$(shell pwd):/build ffbar make static
 
 deps:  ; opam install --deps-only --yes .
 test:  ; opam exec -- dune runtest
