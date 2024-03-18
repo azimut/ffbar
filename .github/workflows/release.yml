@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: make image
       - run: make static
-      - run: mv _build_static/default/bin/main.exe ffbar
+      - run: cp _build_static/default/bin/main.exe ffbar
       - uses: marvinpinto/action-automatic-releases@latest
         with:
           prerelease: false

@@ -1,13 +1,14 @@
-.PHONY: dev release static image deps test clean run install
+.PHONY: dev release static docker image deps test clean run install
 
 dev:     ; opam exec -- dune build
 release: ; opam exec -- dune build --profile release --build-dir _build_release
+static:
+	opam exec -- dune build --profile static --build-dir _build_static
+	strip _build_static/default/bin/main.exe
 
 image:; docker build --tag ffbar:latest .
-static:
-	docker run --rm --volume=$(shell pwd):/build ffbar \
-		opam exec -- dune build --profile static --build-dir _build_static && \
-		strip _build_static/default/bin/main.exe
+docker:
+	docker run --rm --volume=$(shell pwd):/build ffbar make static
 
 deps:  ; opam install --deps-only --yes .
 test:  ; opam exec -- dune runtest
