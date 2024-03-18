@@ -1,0 +1,20 @@
+name: Release on new tag
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: make image
+      - run: make docker
+      - run: cp _build_static/default/bin/main.exe ffbar
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          prerelease: false
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          files: |
+            ffbar
+            LICENSE
