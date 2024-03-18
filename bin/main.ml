@@ -1,9 +1,5 @@
 type command = Eof | Nop | Timestamp of float
 
-let parse_timestamp t =
-  Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
-      Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
-
 let rec read_filename chan =
   match In_channel.input_line chan with
   | None -> Error "reached EOF before finding Input #0"
@@ -13,6 +9,10 @@ let rec read_filename chan =
       let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
       Ok String.(sub tmp 0 (max 0 (length tmp - 2)))
   | Some _ -> read_filename chan
+
+let parse_timestamp t =
+  Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
+      Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
 
 let rec read_duration chan =
   match In_channel.input_line chan with
@@ -83,5 +83,5 @@ let () =
   | args ->
       args.(0) <-
         "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -" ;
-      read_output @@ Unix.open_process_in
-      @@ String.concat " " (Array.to_list args)
+      read_output
+        (Unix.open_process_in @@ String.concat " " (Array.to_list args))
