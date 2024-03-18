@@ -4,6 +4,16 @@ let parse_timestamp t =
   Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
       Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
 
+let rec read_filename chan =
+  match In_channel.input_line chan with
+  | None -> Error "reached EOF before finding Input #0"
+  | Some line when String.starts_with ~prefix:"frame=1" line ->
+      Error "reached progress updates before finding Input #0"
+  | Some line when String.starts_with ~prefix:"Input #0" line ->
+      let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
+      Ok String.(sub tmp 0 (min 32 (max 0 (length tmp - 2))))
+  | Some _ -> read_filename chan
+
 let rec read_duration chan =
   match In_channel.input_line chan with
   | None -> Error "reached EOF before finding a Duration"
@@ -15,24 +25,24 @@ let rec read_duration chan =
         @@ String.(sub line (length "  Duration: ") (length "00:00:00")) )
   | Some _ -> read_duration chan
 
-let line2command line =
-  match line with
-  | line when String.starts_with ~prefix:"out_time=" line ->
-      Timestamp
-        ( parse_timestamp
-        @@ String.(sub line (length "out_time=") (length "00:00:00")) )
-  | _ -> Nop
-
 let read_command chan =
   match In_channel.input_line chan with
   | None -> Eof
-  | Some line -> line2command line
+  | Some line when String.starts_with ~prefix:"out_time=" line ->
+      Timestamp
+        ( parse_timestamp
+        @@ String.(sub line (length "out_time=") (length "00:00:00")) )
+  | Some _ -> Nop
 
-let read_commands chan duration =
+let read_commands chan filename duration =
   let total = Float.to_int duration in
   let bar =
     let open Progress.Line in
-    list [elapsed (); bar ~style:`UTF8 total; percentage_of total]
+    list
+      [ rpad 32 (const filename)
+      ; elapsed ()
+      ; bar ~style:`UTF8 total
+      ; percentage_of total ]
   in
   let prev = ref 0.0 in
   let quit = ref false in
@@ -44,13 +54,16 @@ let read_commands chan duration =
         | Timestamp timestamp ->
             f (Float.to_int (timestamp -. !prev)) ;
             prev := timestamp
-      done ) ;
-  print_newline ()
+      done )
 
 let read_output chan =
-  match read_duration chan with
+  match
+    Result.bind (read_filename chan) (fun filename ->
+        Result.bind (read_duration chan) (fun duration ->
+            Ok (read_commands chan filename duration) ) )
+  with
   | Error err -> failwith err
-  | Ok duration -> read_commands chan duration
+  | Ok _ -> print_newline ()
 
 let print_usage () =
   print_endline "Show a progress bar to your run of ffmpeg." ;
