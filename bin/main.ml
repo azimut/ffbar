@@ -11,7 +11,7 @@ let rec read_filename chan =
       Error "reached progress updates before finding Input #0"
   | Some line when String.starts_with ~prefix:"Input #0" line ->
       let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
-      Ok String.(sub tmp 0 (min 32 (max 0 (length tmp - 2))))
+      Ok String.(sub tmp 0 (max 0 (length tmp - 2)))
   | Some _ -> read_filename chan
 
 let rec read_duration chan =
@@ -39,7 +39,7 @@ let read_commands chan filename duration =
   let bar =
     let open Progress.Line in
     list
-      [ rpad 32 (const filename)
+      [ rpad 24 (constf " %s" String.(sub filename 0 (min 23 (length filename))))
       ; elapsed ()
       ; bar ~style:`UTF8 total
       ; percentage_of total ]
@@ -63,7 +63,7 @@ let read_output chan =
             Ok (read_commands chan filename duration) ) )
   with
   | Error err -> failwith err
-  | Ok _ -> print_newline ()
+  | Ok _ -> ()
 
 let print_usage () =
   print_endline "Show a progress bar to your run of ffmpeg." ;
