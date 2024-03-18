@@ -1,7 +1,8 @@
-.PHONY: dev release deps test clean run install
+.PHONY: dev release static deps test clean run install
 
 dev:     ; opam exec -- dune build
 release: ; opam exec -- dune build --profile release --build-dir _build_release
+static:  ; opam exec -- dune build --profile static  --build-dir _build_static
 
 deps:  ; opam install . --deps-only --with-test
 test:  ; opam exec -- dune runtest
