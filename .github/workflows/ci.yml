@@ -6,6 +6,8 @@ on:
     paths-ignore:
       - 'LICENSE'
       - 'README.md'
+      - 'Dockerfile'
+      - '.ocamlformat'
       - '.github/workflows/release.yml'
 jobs:
   build:

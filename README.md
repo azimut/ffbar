@@ -17,7 +17,7 @@
 ## Installation
 
 - Download one of the available static compiled binaries from the [releases](https://github.com/azimut/ffbar/releases/) page.
-- Or build it yourself (needs a working opam/dune setup).
+- Or build it yourself (needs a working [opam](https://opam.ocaml.org/doc/Install.html) setup).
   ```
   $ make deps
   $ make install
