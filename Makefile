@@ -6,8 +6,8 @@ release: ; opam exec -- dune build --profile release --build-dir _build_release
 image:; docker build --tag ffbar:latest .
 static:
 	docker run --rm --volume=$(shell pwd):/build ffbar \
-		opam exec -- dune build --profile static --build-dir _build_static
-	strip _build_static/default/bin/main.exe
+		opam exec -- dune build --profile static --build-dir _build_static && \
+		strip _build_static/default/bin/main.exe
 
 deps:  ; opam install --deps-only --yes .
 test:  ; opam exec -- dune runtest
