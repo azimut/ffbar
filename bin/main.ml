@@ -40,9 +40,9 @@ let read_commands chan filename duration =
     let open Progress.Line in
     list
       [ rpad 24 (constf " %s" String.(sub filename 0 (min 23 (length filename))))
-      ; elapsed ()
+      ; percentage_of total
       ; bar ~style:`UTF8 total
-      ; percentage_of total ]
+      ; const "-" ++ eta total ++ const " " ]
   in
   let prev = ref 0.0 in
   let quit = ref false in
