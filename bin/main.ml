@@ -73,6 +73,8 @@ let print_usage () =
   print_endline
     "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
 
+let unwords = String.concat " "
+
 let () =
   match Sys.argv with
   | [||] | [|_|] ->
@@ -81,7 +83,11 @@ let () =
       else
         read_output stdin
   | args ->
-      args.(0) <-
-        "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -" ;
-      read_output
-        (Unix.open_process_in @@ String.concat " " (Array.to_list args))
+      Array.mapi_inplace
+        (fun i arg ->
+          if i = 0 then
+            "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -"
+          else
+            Filename.quote arg )
+        args ;
+      read_output (Unix.open_process_in @@ unwords (Array.to_list args))
