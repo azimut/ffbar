@@ -65,19 +65,20 @@ let read_output chan =
   | Error err -> failwith err
   | Ok _ -> ()
 
-let print_usage () =
-  print_endline "Show a progress bar to your run of ffmpeg." ;
-  print_newline () ;
-  print_endline "Examples:" ;
-  print_endline "$ ffbar -i input.mp4 out.mp4" ;
-  print_endline
-    "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
-
 let () =
+  let usage =
+    String.concat "\n"
+      [ "Show a progress bar to your run of ffmpeg."
+      ; ""
+      ; "Examples:"
+      ; "$ ffbar -i input.mp4 out.mp4"
+      ; "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
+      ]
+  in
   match Sys.argv |> Array.to_list with
   | [] | [_] ->
       if Unix.(isatty stdin) then
-        print_usage ()
+        print_endline usage
       else
         read_output stdin
   | _ :: args -> (
