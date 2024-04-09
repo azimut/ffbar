@@ -80,8 +80,18 @@ let () =
         print_usage ()
       else
         read_output stdin
-  | _ :: args ->
-      read_output @@ Unix.open_process_in
-      @@ Filename.quote_command "/usr/bin/ffmpeg"
-           (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
-           ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
+  | _ :: args -> (
+      let chan =
+        Unix.open_process_in
+        @@ Filename.quote_command "/usr/bin/ffmpeg"
+             (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
+             ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
+      in
+      read_output chan ;
+      print_newline () ;
+      match Unix.close_process_in chan with
+      | Unix.WEXITED n ->
+          Printf.printf "exited with %d\n" n ;
+          exit n
+      | Unix.WSIGNALED n -> Printf.printf "signaled with %d\n" n
+      | Unix.WSTOPPED n -> Printf.printf "stopped with %d\n" n )
