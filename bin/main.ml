@@ -88,10 +88,10 @@ let () =
              ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
       in
       read_output chan ;
-      print_newline () ;
       match Unix.close_process_in chan with
+      | Unix.WEXITED 0 -> ()
       | Unix.WEXITED n ->
-          Printf.printf "exited with %d\n" n ;
+          Printf.printf "\nabnormal exit code %d\n" n ;
           exit n
       | Unix.WSIGNALED n -> Printf.printf "signaled with %d\n" n
       | Unix.WSTOPPED n -> Printf.printf "stopped with %d\n" n )
