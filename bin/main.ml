@@ -74,19 +74,14 @@ let print_usage () =
     "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
 
 let () =
-  let unwords = String.concat " " in
-  match Sys.argv with
-  | [||] | [|_|] ->
+  match Sys.argv |> Array.to_list with
+  | [] | [_] ->
       if Unix.(isatty stdin) then
         print_usage ()
       else
         read_output stdin
-  | args ->
-      Array.mapi_inplace
-        (fun i arg ->
-          if i = 0 then
-            "2>&1 /usr/bin/ffmpeg -nostdin -hide_banner -stats -progress -"
-          else
-            Filename.quote arg )
-        args ;
-      read_output @@ Unix.open_process_in @@ unwords (Array.to_list args)
+  | _ :: args ->
+      read_output @@ Unix.open_process_in
+      @@ Filename.quote_command "/usr/bin/ffmpeg"
+           (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
+           ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
