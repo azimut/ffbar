@@ -1,29 +1,8 @@
 type command = Eof | Nop | Timestamp of float
 
-let rec read_filename chan =
-  match In_channel.input_line chan with
-  | None -> Error "reached EOF before finding Input #0"
-  | Some line when String.starts_with ~prefix:"frame=1" line ->
-      Error "reached progress updates before finding Input #0"
-  | Some line when String.starts_with ~prefix:"Input #0" line ->
-      let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
-      Ok String.(sub tmp 0 (max 0 (length tmp - 2)))
-  | Some _ -> read_filename chan
-
 let parse_timestamp t =
   Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
       Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
-
-let rec read_duration chan =
-  match In_channel.input_line chan with
-  | None -> Error "reached EOF before finding a Duration"
-  | Some line when String.starts_with ~prefix:"frame=1" line ->
-      Error "reached progress updates before finding Duration"
-  | Some line when String.starts_with ~prefix:"  Duration:" line ->
-      Ok
-        ( parse_timestamp
-        @@ String.(sub line (length "  Duration: ") (length "00:00:00")) )
-  | Some _ -> read_duration chan
 
 let read_command chan =
   match In_channel.input_line chan with
@@ -57,6 +36,27 @@ let read_commands chan filename duration =
       done )
 
 let read_output chan =
+  let rec read_duration chan =
+    match In_channel.input_line chan with
+    | None -> Error "reached EOF before finding a Duration"
+    | Some line when String.starts_with ~prefix:"frame=1" line ->
+        Error "reached progress updates before finding Duration"
+    | Some line when String.starts_with ~prefix:"  Duration:" line ->
+        Ok
+          ( parse_timestamp
+          @@ String.(sub line (length "  Duration: ") (length "00:00:00")) )
+    | Some _ -> read_duration chan
+  in
+  let rec read_filename chan =
+    match In_channel.input_line chan with
+    | None -> Error "reached EOF before finding Input #0"
+    | Some line when String.starts_with ~prefix:"frame=1" line ->
+        Error "reached progress updates before finding Input #0"
+    | Some line when String.starts_with ~prefix:"Input #0" line ->
+        let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
+        Ok String.(sub tmp 0 (max 0 (length tmp - 2)))
+    | Some _ -> read_filename chan
+  in
   match
     Result.bind (read_filename chan) (fun filename ->
         Result.bind (read_duration chan) (fun duration ->
@@ -73,9 +73,8 @@ let print_usage () =
   print_endline
     "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
 
-let unwords = String.concat " "
-
 let () =
+  let unwords = String.concat " " in
   match Sys.argv with
   | [||] | [|_|] ->
       if Unix.(isatty stdin) then
@@ -90,4 +89,4 @@ let () =
           else
             Filename.quote arg )
         args ;
-      read_output (Unix.open_process_in @@ unwords (Array.to_list args))
+      read_output @@ Unix.open_process_in @@ unwords (Array.to_list args)
