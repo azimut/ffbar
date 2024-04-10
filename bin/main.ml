@@ -84,7 +84,7 @@ let () =
   | _ :: args -> (
       let chan =
         Unix.open_process_in
-        @@ Filename.quote_command "/usr/bin/ffmpeg"
+        @@ Filename.quote_command "ffmpeg"
              (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
              ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
       in
