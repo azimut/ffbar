@@ -13,8 +13,15 @@ let read_command chan =
         @@ String.(sub line (length "out_time=") (length "00:00:00")) )
   | Some _ -> Nop
 
-let read_commands chan filename duration =
-  let total = Float.to_int duration in
+let read_commands chan filename total_duration partial_duration seek_to =
+  let total =
+    Float.to_int
+    @@
+    match (partial_duration, seek_to) with
+    | Some dur, _ -> parse_timestamp dur
+    | None, Some seek -> total_duration -. parse_timestamp seek
+    | None, None -> total_duration
+  in
   let bar =
     let open Progress.Line in
     list
@@ -35,7 +42,7 @@ let read_commands chan filename duration =
             prev := timestamp
       done )
 
-let read_output chan =
+let read_output chan partial_duration seek_to =
   let rec read_duration chan =
     match In_channel.input_line chan with
     | None -> Error "reached EOF before finding a Duration"
@@ -60,7 +67,7 @@ let read_output chan =
   match
     Result.bind (read_filename chan) (fun filename ->
         Result.bind (read_duration chan) (fun duration ->
-            Ok (read_commands chan filename duration) ) )
+            Ok (read_commands chan filename duration partial_duration seek_to) ) )
   with
   | Error err -> failwith err
   | Ok _ -> ()
@@ -75,12 +82,17 @@ let () =
       ; "$ ffmpeg -nostdin -stats -progress - -i input.mp4 out.mp4 2>&1 | ffbar"
       ]
   in
+  let get_param flag args =
+    Option.bind
+      (Option.map (( + ) 1) (List.find_index (( = ) flag) args))
+      (List.nth_opt args)
+  in
   match Sys.argv |> Array.to_list with
   | [] | [_] ->
       if Unix.(isatty stdin) then
         print_endline usage
       else
-        read_output stdin
+        read_output stdin None None
   | _ :: args -> (
       let chan =
         Unix.open_process_in
@@ -88,7 +100,7 @@ let () =
              (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
              ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
       in
-      read_output chan ;
+      read_output chan (get_param "-ss" args) (get_param "-t" args) ;
       match Unix.close_process_in chan with
       | Unix.WEXITED 0 -> ()
       | Unix.WEXITED n ->
