@@ -100,7 +100,7 @@ let () =
              (["-nostdin"; "-hide_banner"; "-stats"; "-progress"; "-"] @ args)
              ~stdout:"/dev/stdout" ~stderr:"/dev/stdout"
       in
-      read_output chan (get_param "-ss" args) (get_param "-t" args) ;
+      read_output chan (get_param "-t" args) (get_param "-ss" args) ;
       match Unix.close_process_in chan with
       | Unix.WEXITED 0 -> ()
       | Unix.WEXITED n ->
