@@ -27,7 +27,7 @@ let read_commands chan filename total_duration partial_duration seek_to =
     list
       [ rpad 24 (constf " %s" String.(sub filename 0 (min 23 (length filename))))
       ; percentage_of total
-      ; bar ~style:`UTF8 total
+      ; bar ~style:`ASCII total
       ; const "-" ++ eta total ++ const " " ]
   in
   let prev = ref 0.0 in
