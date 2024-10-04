@@ -1,2 +1,4 @@
 (test
- (name test_ffbar))
+ (name test_ffbar)
+ (libraries ffbar)
+ (deps ./Test_parsing.input))
