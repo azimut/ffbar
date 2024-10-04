@@ -1,2 +1,3 @@
 (library
- (name ffbar))
+ (name ffbar)
+ (libraries progress))
