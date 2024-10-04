@@ -4,8 +4,8 @@ type command = Eof | Nop | Timestamp of float
 
 let parse_timestamp s =
   if String.contains s ':' then
-    Scanf.sscanf s "%d:%d:%d" (fun hour minute second ->
-        Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
+    Scanf.sscanf s "%d:%d:%f" (fun hour minute second ->
+        Float.of_int ((hour * 60 * 60) + (minute * 60)) +. second )
   else
     float_of_string s
 
@@ -14,7 +14,7 @@ let read_command chan =
   | None -> Eof
   | Some line when String.starts_with ~prefix:"out_time=" line ->
       let raw_timestamp =
-        String.(sub line (length "out_time=") (length "00:00:00"))
+        String.(sub line (length "out_time=") (length "00:00:00.000000"))
       in
       Timestamp (parse_timestamp raw_timestamp)
   | Some _ -> Nop
@@ -57,7 +57,7 @@ let read_output chan partial_duration seek_to =
         Error "reached progress updates before finding Duration"
     | Some line when String.starts_with ~prefix:"  Duration:" line ->
         let raw_timestamp =
-          String.(sub line (length "  Duration: ") (length "00:00:00"))
+          String.(sub line (length "  Duration: ") (length "00:00:00.00"))
         in
         Ok (parse_timestamp raw_timestamp)
     | Some _ -> read_duration chan
