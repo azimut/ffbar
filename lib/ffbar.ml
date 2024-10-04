@@ -3,7 +3,8 @@ type video = {name: string; duration: float}
 type command = Eof | Nop | Timestamp of float | ParsingError
 
 let parse_timestamp s =
-  Option.to_result ~none:"failed to parse_timestamp"
+  Option.to_result
+    ~none:("could not parse timestamp: " ^ s)
     ( if String.contains s ':' then
         Scanf.sscanf_opt s "%d:%d:%f" (fun hour minute second ->
             Float.of_int ((hour * 60 * 60) + (minute * 60)) +. second )
@@ -22,16 +23,27 @@ let read_command chan =
       | Ok timestamp -> Timestamp timestamp )
   | Some _ -> Nop
 
-let calculate_total duration output_duration seek_to =
+(* NOTE: I do NOT handle if seek is outside file. ffmpeg should handle
+   that... *)
+let calculate_total video_duration user_duration seek_to =
   Result.map Float.to_int
-    ( match (output_duration, seek_to) with
-    | Some dur, _ -> parse_timestamp dur
+    ( match (user_duration, seek_to) with
+    | Some sdur, Some sseek ->
+        Result.bind (parse_timestamp sdur) (fun uduration ->
+            Result.bind (parse_timestamp sseek) (fun seek ->
+                if seek +. uduration > video_duration then
+                  Ok (video_duration -. seek)
+                else
+                  Ok uduration ) )
+    | Some dur, None -> parse_timestamp dur
     | None, Some seek ->
-        Result.map (fun seek -> duration -. seek) (parse_timestamp seek)
-    | None, None -> Ok duration )
+        Result.map
+          (fun seek -> video_duration -. min video_duration seek)
+          (parse_timestamp seek)
+    | None, None -> Ok video_duration )
 
-let read_commands chan video partial_duration seek_to =
-  let total = calculate_total video.duration partial_duration seek_to in
+let read_commands chan video user_duration user_seek =
+  let total = calculate_total video.duration user_duration user_seek in
   Result.bind total (fun total ->
       let bar =
         let open Progress.Line in
@@ -57,7 +69,7 @@ let read_commands chan video partial_duration seek_to =
           done ) ;
       Ok () )
 
-let read_output chan partial_duration seek_to =
+let read_output chan user_duration user_seek =
   let rec read_duration chan =
     match In_channel.input_line chan with
     | None -> Error "reached EOF before finding a Duration"
@@ -84,7 +96,7 @@ let read_output chan partial_duration seek_to =
   match
     Result.bind (read_filename chan) (fun name ->
         Result.bind (read_duration chan) (fun duration ->
-            read_commands chan {name; duration} partial_duration seek_to ) )
+            read_commands chan {name; duration} user_duration user_seek ) )
   with
   | Error err -> failwith err
   | Ok _ -> ()
