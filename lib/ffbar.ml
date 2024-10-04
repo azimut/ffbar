@@ -8,9 +8,10 @@ let read_command chan =
   match In_channel.input_line chan with
   | None -> Eof
   | Some line when String.starts_with ~prefix:"out_time=" line ->
-      Timestamp
-        ( parse_timestamp
-        @@ String.(sub line (length "out_time=") (length "00:00:00")) )
+      let raw_timestamp =
+        String.(sub line (length "out_time=") (length "00:00:00"))
+      in
+      Timestamp (parse_timestamp raw_timestamp)
   | Some _ -> Nop
 
 let read_commands chan filename total_duration partial_duration seek_to =
@@ -46,18 +47,19 @@ let read_output chan partial_duration seek_to =
   let rec read_duration chan =
     match In_channel.input_line chan with
     | None -> Error "reached EOF before finding a Duration"
-    | Some line when String.starts_with ~prefix:"frame=1" line ->
+    | Some line when String.starts_with ~prefix:"frame=" line ->
         Error "reached progress updates before finding Duration"
     | Some line when String.starts_with ~prefix:"  Duration:" line ->
-        Ok
-          ( parse_timestamp
-          @@ String.(sub line (length "  Duration: ") (length "00:00:00")) )
+        let raw_timestamp =
+          String.(sub line (length "  Duration: ") (length "00:00:00"))
+        in
+        Ok (parse_timestamp raw_timestamp)
     | Some _ -> read_duration chan
   in
   let rec read_filename chan =
     match In_channel.input_line chan with
     | None -> Error "reached EOF before finding Input #0"
-    | Some line when String.starts_with ~prefix:"frame=1" line ->
+    | Some line when String.starts_with ~prefix:"frame=" line ->
         Error "reached progress updates before finding Input #0"
     | Some line when String.starts_with ~prefix:"Input #0" line ->
         let start = String.index line '\'' + 1 in
