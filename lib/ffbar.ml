@@ -1,3 +1,5 @@
+type video = {name: string; duration: float}
+
 type command = Eof | Nop | Timestamp of float
 
 let parse_timestamp t =
@@ -14,19 +16,20 @@ let read_command chan =
       Timestamp (parse_timestamp raw_timestamp)
   | Some _ -> Nop
 
-let read_commands chan filename total_duration partial_duration seek_to =
+let read_commands chan video partial_duration seek_to =
   let total =
     Float.to_int
     @@
     match (partial_duration, seek_to) with
     | Some dur, _ -> parse_timestamp dur
-    | None, Some seek -> total_duration -. parse_timestamp seek
-    | None, None -> total_duration
+    | None, Some seek -> video.duration -. parse_timestamp seek
+    | None, None -> video.duration
   in
   let bar =
     let open Progress.Line in
     list
-      [ rpad 24 (constf " %s" String.(sub filename 0 (min 23 (length filename))))
+      [ rpad 24
+          (constf " %s" String.(sub video.name 0 (min 23 (length video.name))))
       ; percentage_of total
       ; bar ~style:`ASCII total
       ; const "-" ++ eta total ++ const " " ]
@@ -68,9 +71,9 @@ let read_output chan partial_duration seek_to =
     | Some _ -> read_filename chan
   in
   match
-    Result.bind (read_filename chan) (fun filename ->
+    Result.bind (read_filename chan) (fun name ->
         Result.bind (read_duration chan) (fun duration ->
-            Ok (read_commands chan filename duration partial_duration seek_to) ) )
+            Ok (read_commands chan {name; duration} partial_duration seek_to) ) )
   with
   | Error err -> failwith err
   | Ok _ -> ()
