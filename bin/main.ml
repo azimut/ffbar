@@ -60,8 +60,9 @@ let read_output chan partial_duration seek_to =
     | Some line when String.starts_with ~prefix:"frame=1" line ->
         Error "reached progress updates before finding Input #0"
     | Some line when String.starts_with ~prefix:"Input #0" line ->
-        let tmp = String.split_on_char '/' line |> List.rev |> List.hd in
-        Ok String.(sub tmp 0 (max 0 (length tmp - 2)))
+        let start = String.index line '\'' + 1 in
+        let file = String.(sub line start (length line - start)) in
+        Ok (Filename.basename file)
     | Some _ -> read_filename chan
   in
   match
