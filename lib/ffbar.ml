@@ -2,9 +2,12 @@ type video = {name: string; duration: float}
 
 type command = Eof | Nop | Timestamp of float
 
-let parse_timestamp t =
-  Scanf.sscanf t "%d:%d:%d" (fun hour minute second ->
-      Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
+let parse_timestamp s =
+  if String.contains s ':' then
+    Scanf.sscanf s "%d:%d:%d" (fun hour minute second ->
+        Float.of_int ((hour * 60 * 60) + (minute * 60) + second) )
+  else
+    float_of_string s
 
 let read_command chan =
   match In_channel.input_line chan with
