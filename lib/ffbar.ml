@@ -88,9 +88,12 @@ let read_output chan user_duration user_seek =
     | Some line when String.starts_with ~prefix:"frame=" line ->
         Error "reached progress updates before finding Input #0"
     | Some line when String.starts_with ~prefix:"Input #0" line ->
-        let start = String.index line '\'' + 1 in
-        let file = String.(sub line start (length line - start - 2)) in
-        Ok (Filename.basename file)
+        Option.to_result ~none:"failed to parse Input #0 line"
+          ( String.index_opt line '\''
+          |> Option.map (( + ) 1)
+          |> Option.map (fun start ->
+                 String.(sub line start (length line - start - 2)) )
+          |> Option.map Filename.basename )
     | Some _ -> read_filename chan
   in
   Result.bind (read_filename chan) (fun name ->
