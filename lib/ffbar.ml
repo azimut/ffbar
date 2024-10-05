@@ -25,12 +25,12 @@ let read_command chan =
 
 (* NOTE: I do NOT handle if seek is outside file. ffmpeg should handle
    that... *)
-let calculate_total video_duration user_duration seek_to =
+let calculate_total video_duration user_duration user_seek =
   Result.map Float.to_int
-    ( match (user_duration, seek_to) with
-    | Some sdur, Some sseek ->
-        Result.bind (parse_timestamp sdur) (fun uduration ->
-            Result.bind (parse_timestamp sseek) (fun seek ->
+    ( match (user_duration, user_seek) with
+    | Some udur, Some useek ->
+        Result.bind (parse_timestamp udur) (fun uduration ->
+            Result.bind (parse_timestamp useek) (fun seek ->
                 if seek +. uduration > video_duration then
                   Ok (video_duration -. seek)
                 else
@@ -93,10 +93,6 @@ let read_output chan user_duration user_seek =
         Ok (Filename.basename file)
     | Some _ -> read_filename chan
   in
-  match
-    Result.bind (read_filename chan) (fun name ->
-        Result.bind (read_duration chan) (fun duration ->
-            read_commands chan {name; duration} user_duration user_seek ) )
-  with
-  | Error err -> failwith err
-  | Ok _ -> ()
+  Result.bind (read_filename chan) (fun name ->
+      Result.bind (read_duration chan) (fun duration ->
+          read_commands chan {name; duration} user_duration user_seek ) )
