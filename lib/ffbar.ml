@@ -1,5 +1,3 @@
-type video = {name: string; duration: float}
-
 type command = Eof | Nop | Timestamp of float | ParsingError
 
 let parse_timestamp s =
@@ -42,33 +40,28 @@ let calculate_total video_duration user_duration user_seek =
           (parse_timestamp seek)
     | None, None -> Ok video_duration )
 
-let read_commands chan video user_duration user_seek =
-  let total = calculate_total video.duration user_duration user_seek in
-  Result.bind total (fun total ->
-      let bar =
-        let open Progress.Line in
-        list
-          [ rpad 24
-              (constf " %s"
-                 String.(sub video.name 0 (min 23 (length video.name))) )
-          ; percentage_of total
-          ; bar ~style:`ASCII ~data:`Sum total
-          ; const "-" ++ eta total ++ const " " ]
-      in
-      let prev = ref 0 in
-      let quit = ref false in
-      Progress.with_reporter bar (fun f ->
-          while not !quit do
-            match read_command chan with
-            | Eof | ParsingError ->
-                quit := true (* FIXME: handle parsing error *)
-            | Nop -> ()
-            | Timestamp tt ->
-                let timestamp = Float.to_int tt in
-                f (timestamp - !prev) ;
-                prev := timestamp
-          done ) ;
-      Ok () )
+let read_commands chan filename total =
+  let bar =
+    let open Progress.Line in
+    list
+      [ rpad 24 (constf " %s" String.(sub filename 0 (min 23 (length filename))))
+      ; percentage_of total
+      ; bar ~style:`ASCII ~data:`Sum total
+      ; const "-" ++ eta total ++ const " " ]
+  in
+  let prev = ref 0 in
+  let quit = ref false in
+  Progress.with_reporter bar (fun f ->
+      while not !quit do
+        match read_command chan with
+        | Eof | ParsingError -> quit := true (* FIXME: handle parsing error *)
+        | Nop -> ()
+        | Timestamp tt ->
+            let timestamp = Float.to_int tt in
+            f (timestamp - !prev) ;
+            prev := timestamp
+      done ) ;
+  Ok ()
 
 let read_output chan user_duration user_seek =
   let rec read_duration chan =
@@ -99,4 +92,5 @@ let read_output chan user_duration user_seek =
   in
   Result.bind (read_filename chan) (fun name ->
       Result.bind (read_duration chan) (fun duration ->
-          read_commands chan {name; duration} user_duration user_seek ) )
+          Result.bind (calculate_total duration user_duration user_seek)
+            (fun total -> read_commands chan name total ) ) )
