@@ -52,10 +52,10 @@ let read_commands chan video user_duration user_seek =
               (constf " %s"
                  String.(sub video.name 0 (min 23 (length video.name))) )
           ; percentage_of total
-          ; bar ~style:`ASCII total
+          ; bar ~style:`ASCII ~data:`Sum total
           ; const "-" ++ eta total ++ const " " ]
       in
-      let prev = ref 0.0 in
+      let prev = ref 0 in
       let quit = ref false in
       Progress.with_reporter bar (fun f ->
           while not !quit do
@@ -63,8 +63,9 @@ let read_commands chan video user_duration user_seek =
             | Eof | ParsingError ->
                 quit := true (* FIXME: handle parsing error *)
             | Nop -> ()
-            | Timestamp timestamp ->
-                f (Float.to_int (timestamp -. !prev)) ;
+            | Timestamp tt ->
+                let timestamp = Float.to_int tt in
+                f (timestamp - !prev) ;
                 prev := timestamp
           done ) ;
       Ok () )
